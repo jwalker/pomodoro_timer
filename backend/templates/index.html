@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <!-- Corrected Font Awesome Link -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-voOa/5MZIR5lTjIX5W0og1m7N58hgiYRxduZ7IwXZbtd11fQ/3ynbq7hUFX/EYXWq0x8RqWjo5URy6lFA3C3KQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        .timer {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .timer h1 {
+            font-size: 3rem;
+            margin: 20px 0;
+        }
+        .timer button {
+            font-size: 1rem;
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .timer button:hover {
+            background-color: #45a049;
+        }
+        .session-input {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .session-input input, .session-input select {
+            padding: 8px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            margin-right: 5px;
+        }
+        .session-info {
+            margin-top: 10px;
+            font-size: 1rem;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .session-info i {
+            margin-right: 5px;
+            color: #4caf50;
+        }
+        .history {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .history h2 {
+            margin-bottom: 10px;
+        }
+        .history ul {
+            list-style: none;
+            padding: 0;
+        }
+        .history li {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer">
+        <h1 id="time-display">25:00</h1>
+        <div class="session-input">
+            <input type="text" id="session-name" placeholder="Enter session name">
+            <select id="session-duration" onchange="updateSessionInfo()">
+                <option value="25">25 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="40">40 minutes</option>
+            </select>
+            <select id="break-duration" onchange="updateSessionInfo()">
+                <option value="5">5 minutes</option>
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+            </select>
+        </div>
+        <div class="session-info" id="session-info">
+            <i class="fas fa-clock"></i> Session: 25 minutes, <i class="fas fa-coffee"></i> Break: 5 minutes
+        </div>
+        <button onclick="startTimer()">Start</button>
+        <button onclick="stopTimer()">Stop</button>
+        <button onclick="resetTimer()">Reset</button>
+    </div>
+    <div class="history">
+        <h2>Session History</h2>
+        <ul id="session-history">
+            {% for session in session_history %}
+            <li><strong>{{ session.name }}</strong> - {{ session.start_time }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <audio id="bell-sound" src="{{ url_for('static', filename='metal_gong.mp3') }}"></audio>
+    <script>
+        let timer;
+        let timerRunning = false;
+        let timeLeft;
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function updateTimeDisplay() {
+            document.getElementById('time-display').innerText = formatTime(timeLeft);
+        }
+
+        function updateSessionInfo() {
+            const sessionDuration = document.getElementById('session-duration').value;
+            const breakDuration = document.getElementById('break-duration').value;
+            document.getElementById('session-info').innerHTML = `<i class="fas fa-clock"></i> Session: ${sessionDuration} minutes, <i class="fas fa-coffee"></i> Break: ${breakDuration} minutes`;
+        }
+
+        function startTimer() {
+            if (timerRunning) return;
+
+            const sessionName = document.getElementById('session-name').value || 'Unnamed Session';
+            const sessionDuration = parseInt(document.getElementById('session-duration').value) * 60;
+            const breakDuration = parseInt(document.getElementById('break-duration').value) * 60;
+
+            timeLeft = sessionDuration;
+            updateTimeDisplay();
+
+            timerRunning = true;
+            timer = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimeDisplay();
+                } else {
+                    clearInterval(timer);
+                    playBellSound();
+                    alert("Time's up! Take a break.");
+                    timerRunning = false;
+
+                    // Start break timer
+                    startBreakTimer(breakDuration);
+                }
+            }, 1000);
+
+            fetch('/start_timer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ duration: timeLeft, session_name: sessionName })
+            }).then(response => response.json())
+            .then(data => {
+                // Update session history without refreshing
+                const sessionHistoryList = document.getElementById('session-history');
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `<strong>${sessionName}</strong> - ${new Date().toLocaleString()}`;
+                sessionHistoryList.appendChild(listItem);
+            });
+        }
+
+        function startBreakTimer(breakDuration) {
+            timeLeft = breakDuration;
+            updateTimeDisplay();
+
+            timerRunning = true;
+            timer = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimeDisplay();
+                } else {
+                    clearInterval(timer);
+                    playBellSound();
+                    alert("Break over! Time to get back to work.");
+                    timerRunning = false;
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timer);
+            timerRunning = false;
+            fetch('/stop_timer', { method: 'POST' });
+        }
+
+        function resetTimer() {
+            clearInterval(timer);
+            timerRunning = false;
+            timeLeft = parseInt(document.getElementById('session-duration').value) * 60;
+            updateTimeDisplay();
+            fetch('/reset_timer', { method: 'POST' });
+        }
+
+        function playBellSound() {
+            const bellSound = document.getElementById('bell-sound');
+            bellSound.play();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            timeLeft = parseInt(document.getElementById('session-duration').value) * 60;
+            updateTimeDisplay();
+            updateSessionInfo();
+        });
+    </script>
+</body>
+</html>
