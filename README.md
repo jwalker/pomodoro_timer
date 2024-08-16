@@ -1,6 +1,6 @@
 # Pomodoro Timer
 
-![Pomodoro Timer Logo](public/logo.png)
+![Pomodoro Timer Logo](./frontend/public/logo.png)
 
 ## Overview
 
@@ -85,5 +85,6 @@ When hosted on a remote domain, the Pomodoro Timer app can be installed as a PWA
 - Install the App: Look for the "Add to Home Screen" option in your browser settings (usually under the browser's menu).
 - Run Offline: Once installed, you can run the app directly from your home screen, even without an internet connection.
 
-Contact
+# Contact
+
 For questions or feedback, please contact me via [GitHub](https://github.com/jwalker) and [X](https://x.com/call_eax)
