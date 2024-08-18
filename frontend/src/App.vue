@@ -159,7 +159,7 @@ export default {
         }
       }, 1000);
 
-      fetch('http://127.0.0.1:5000/api/start_timer', {
+      fetch('http://localhost:5001/api/start_timer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -217,7 +217,7 @@ export default {
     stopTimer() {
       clearInterval(this.timer);
       this.timerRunning = false;
-      fetch('http://127.0.0.1:5000/api/stop_timer', {
+      fetch('http://localhost:5001/api/stop_timer', {
         method: 'POST'
       });
     },
@@ -226,7 +226,7 @@ export default {
       this.timerRunning = false;
       this.updateSessionInfo();
       this.currentCycle = 1; // Reset cycle count on reset
-      fetch('http://127.0.0.1:5000/api/reset_timer', {
+      fetch('http://localhost:5001/api/reset_timer', {
         method: 'POST'
       });
     },
@@ -247,7 +247,7 @@ export default {
   },
   created() {
     this.updateSessionInfo();
-    fetch('http://127.0.0.1:5000/api/get_history')
+    fetch('http://localhost:5001/api/get_history')
       .then(response => response.json())
       .then(data => {
         this.sessionHistory = data;
