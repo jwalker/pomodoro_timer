@@ -1,14 +1,23 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../frontend/dist')
 
 # Enable CORS for all routes and methods
-CORS(app, resources={r"/api/*": {"origins": ["http://127.0.0.1:8080", "http://localhost:8080"]}})
+CORS(app, resources={r"/api/*": {"origins": ["http://127.0.0.1:8080", "http://localhost:8080", "http://*:8080"]}})
 
 # In-memory list to store session history
 session_history = []
+
+@app.route('/')
+def serve():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/<path:path>')
+def static_proxy(path):
+    # send_static_file will guess the correct MIME type
+    return send_from_directory(app.static_folder, path)
 
 @app.route('/api/start_timer', methods=['POST', 'OPTIONS'])
 def start_timer():
