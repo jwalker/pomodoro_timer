@@ -5,7 +5,8 @@ from datetime import datetime
 app = Flask(__name__, static_folder='../frontend/dist')
 
 # Enable CORS for all routes and methods
-CORS(app, resources={r"/api/*": {"origins": ["http://127.0.0.1:8080", "http://localhost:8080", "http://*:8080"]}})
+#CORS(app, origins=["http://127.0.0.1:5000", "http://192.168.1.131:5000"])
+CORS(app)
 
 # In-memory list to store session history
 session_history = []
@@ -18,6 +19,14 @@ def serve():
 def static_proxy(path):
     # send_static_file will guess the correct MIME type
     return send_from_directory(app.static_folder, path)
+
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory(app.static_folder, 'manifest.json')
+
+@app.route('/service-worker.js')
+def service_worker():
+    return send_from_directory(app.static_folder, 'service-worker.js')
 
 @app.route('/api/start_timer', methods=['POST', 'OPTIONS'])
 def start_timer():
@@ -82,4 +91,4 @@ def _corsify_actual_response(response):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True)
